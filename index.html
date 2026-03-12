@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algo Capital — Crisis Alpha Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050505;
+    --surface: #0e0e0e;
+    --panel: #141414;
+    --border: #252525;
+    --accent: #f5c518;
+    --gold: #f5c518;
+    --green: #39ff14;
+    --red: #ff2020;
+    --orange: #ff8c00;
+    --white: #f2f2f2;
+    --muted: #555555;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--white); font-family:var(--sans); min-height:100vh; overflow-x:hidden; }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(245,197,24,0.04) 1px,transparent 1px), linear-gradient(90deg,rgba(245,197,24,0.04) 1px,transparent 1px);
+    background-size:44px 44px; pointer-events:none; z-index:0;
+  }
+  .wrapper { position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:28px 24px; }
+
+  /* ── BRAND HEADER ── */
+  .brand-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:36px; padding-bottom:20px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand-logo {
+    display:flex; align-items:center; gap:14px;
+  }
+  .logo-mark {
+    width:42px; height:42px; border-radius:10px;
+    background:linear-gradient(135deg,#f5c518,#e0a800);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:18px; color:#000; letter-spacing:-1px;
+    box-shadow:0 0 20px rgba(245,197,24,0.4);
+  }
+  .brand-name {
+    font-size:22px; font-weight:800; letter-spacing:-0.5px;
+    background:linear-gradient(90deg,#f2f2f2,#f5c518);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .brand-tagline { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; margin-top:2px; }
+  .brand-badge {
+    font-family:var(--mono); font-size:10px; color:#000;
+    background: var(--accent);
+    border:none; border-radius:6px;
+    padding:6px 14px; letter-spacing:2px; text-transform:uppercase; font-weight:700;
+  }
+
+  /* ── PAGE TITLE ── */
+  header { margin-bottom:32px; }
+  .header-tag { font-family:var(--mono); font-size:10px; color:var(--accent); letter-spacing:4px; text-transform:uppercase; margin-bottom:10px; opacity:.7; }
+  h1 {
+    font-size:clamp(26px,4vw,50px); font-weight:800; line-height:1.05;
+    background:linear-gradient(135deg,#f2f2f2 0%,#f5c518 55%,#ff2020 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px;
+  }
+  .header-sub { font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:1px; }
+
+  /* ── TABS ── */
+  .tabs { display:flex; gap:3px; margin-bottom:28px; background:var(--surface); padding:4px; border-radius:10px; border:1px solid var(--border); width:fit-content; flex-wrap:wrap; }
+  .tab { padding:8px 18px; border-radius:7px; border:none; background:transparent; color:var(--muted); font-family:var(--mono); font-size:10px; letter-spacing:1px; cursor:pointer; transition:all .2s; text-transform:uppercase; }
+  .tab.active { background:var(--accent); color:#000; font-weight:700; }
+  .contact-tab { color:#f5c518 !important; }
+  .contact-tab.active { background:#f5c518; color:#000; }
+  .tab:hover:not(.active) { color:var(--white); }
+  .section { display:none; } .section.active { display:block; }
+
+  /* ── KPI GRID ── */
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:28px; }
+  .kpi { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; position:relative; overflow:hidden; transition:border-color .2s; animation:fadeUp .4s ease both; }
+  .kpi:hover { border-color:#f5c518; }
+  .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--kpi-color,var(--accent)); }
+  .kpi-label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:7px; }
+  .kpi-value { font-size:26px; font-weight:800; color:var(--kpi-color,var(--accent)); line-height:1; margin-bottom:4px; }
+  .kpi-sub { font-family:var(--mono); font-size:9px; color:var(--muted); }
+  .kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}
+  .kpi:nth-child(4){animation-delay:.2s}.kpi:nth-child(5){animation-delay:.25s}.kpi:nth-child(6){animation-delay:.3s}
+
+  /* ── CARDS ── */
+  .strategy-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px; }
+  @media(max-width:820px){.strategy-grid{grid-template-columns:1fr;}}
+  .strategy-card { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px; }
+  .card-title { font-family:var(--mono); font-size:10px; color:var(--accent); letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; padding-bottom:11px; border-bottom:1px solid var(--border); }
+  .full-card { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:18px; }
+
+  /* ── TABLE ── */
+  .data-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; }
+  .data-table th { padding:9px 11px; text-align:left; color:var(--muted); font-size:9px; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+  .data-table td { padding:9px 11px; border-bottom:1px solid rgba(24,35,51,0.6); color:var(--white); }
+  .data-table tr:hover td { background:rgba(245,197,24,0.03); }
+  .positive { color:var(--green) !important; font-weight:700; }
+  .negative { color:var(--red) !important; font-weight:700; }
+  .neutral  { color:var(--gold) !important; }
+  .badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:9px; font-weight:700; letter-spacing:1px; }
+  .badge-long  { background:rgba(57,255,20,0.12); color:var(--green); border:1px solid rgba(57,255,20,0.25); }
+  .badge-short { background:rgba(255,32,32,0.12);  color:var(--red);   border:1px solid rgba(255,32,32,0.25); }
+  .badge-neutral { background:rgba(245,197,24,0.12); color:var(--gold); border:1px solid rgba(240,180,41,0.25); }
+
+  /* ── BARS ── */
+  .bar-chart { display:flex; flex-direction:column; gap:9px; }
+  .bar-row { display:flex; align-items:center; gap:11px; }
+  .bar-label { font-family:var(--mono); font-size:9px; color:var(--muted); width:95px; flex-shrink:0; text-align:right; }
+  .bar-track { flex:1; height:22px; background:rgba(255,255,255,0.03); border-radius:4px; overflow:hidden; position:relative; }
+  .bar-fill { height:100%; border-radius:4px; display:flex; align-items:center; padding-left:7px; font-family:var(--mono); font-size:9px; font-weight:700; color:#000; transition:width 1s cubic-bezier(.16,1,.3,1); min-width:2px; }
+  .bar-fill.neg { justify-content:flex-end; padding-left:0; padding-right:7px; color:#fff; }
+  .bar-val { font-family:var(--mono); font-size:10px; font-weight:700; width:56px; flex-shrink:0; }
+
+  /* ── TRIGGER ── */
+  .trigger-list { display:flex; flex-direction:column; gap:11px; }
+  .trigger-item { background:rgba(245,197,24,0.035); border:1px solid rgba(245,197,24,0.12); border-radius:10px; padding:14px; display:grid; grid-template-columns:auto 1fr auto; gap:11px; align-items:center; }
+  .trigger-num { font-family:var(--mono); font-size:18px; font-weight:700; color:var(--accent); width:28px; text-align:center; }
+  .trigger-text { font-size:12px; line-height:1.5; }
+  .trigger-text strong { color:var(--gold); }
+  .trigger-signal { font-family:var(--mono); font-size:10px; font-weight:700; padding:3px 9px; border-radius:5px; white-space:nowrap; }
+
+  /* ── MATRIX ── */
+  .matrix { width:100%; border-collapse:collapse; }
+  .matrix th,.matrix td { padding:9px 13px; text-align:center; font-family:var(--mono); font-size:10px; }
+  .matrix th { color:var(--muted); font-size:9px; letter-spacing:1px; border-bottom:1px solid var(--border); }
+  .matrix td { border-bottom:1px solid rgba(24,35,51,0.4); }
+  .matrix td:first-child { text-align:left; color:var(--white); font-size:11px; }
+  .cell-green { background:rgba(57,255,20,0.1); color:var(--green); font-weight:700; border-radius:4px; }
+  .cell-red   { background:rgba(255,32,32,0.1);  color:var(--red);   font-weight:700; border-radius:4px; }
+  .cell-gold  { background:rgba(245,197,24,0.1); color:var(--gold);  font-weight:700; border-radius:4px; }
+
+  /* ── PAYOFF GRID ── */
+  .payoff-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin-top:12px; }
+  .payoff-cell { padding:9px 5px; border-radius:6px; text-align:center; font-family:var(--mono); font-size:10px; font-weight:700; }
+  .payoff-header { background:var(--surface); color:var(--muted); font-size:9px; letter-spacing:1px; }
+
+  /* ── SCENARIO ── */
+  .scenario-bar { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:22px; }
+  .scen-btn { padding:7px 15px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:var(--mono); font-size:9px; letter-spacing:1px; cursor:pointer; text-transform:uppercase; transition:all .2s; }
+  .scen-btn.active,.scen-btn:hover { border-color:var(--gold); color:var(--gold); background:rgba(245,197,24,0.07); }
+
+  /* ── CANVAS CHART ── */
+  .chart-wrap { position:relative; width:100%; }
+  canvas { display:block; width:100% !important; }
+
+  /* ── CALC ── */
+  .calc-input { width:100%; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--white); font-family:var(--mono); font-size:13px; outline:none; transition:border-color .2s; }
+  .calc-input:focus { border-color:#f5c518; }
+  select.calc-input { cursor:pointer; }
+  .calc-btn { width:100%; padding:12px; background:linear-gradient(90deg,#f5c518,#e0a800); color:#000; border:none; border-radius:8px; font-family:var(--mono); font-size:11px; font-weight:700; cursor:pointer; letter-spacing:2px; text-transform:uppercase; transition:opacity .2s; }
+  .calc-btn:hover { opacity:.85; }
+
+  .divider { height:1px; background:var(--border); margin:18px 0; }
+  .disclaimer { font-family:var(--mono); font-size:9px; color:var(--muted); line-height:1.8; padding:14px; border:1px solid var(--border); border-radius:8px; margin-top:28px; }
+
+  /* ── EQUITY CURVE ── */
+  #equity-canvas { background:transparent; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  /* ── CONTACT PAGE ── */
+  .contact-hero {
+    text-align:center; padding:60px 20px 40px;
+  }
+  .contact-eyebrow {
+    font-family:var(--mono); font-size:10px; letter-spacing:5px; text-transform:uppercase;
+    color:var(--accent); margin-bottom:20px; opacity:.9;
+  }
+  .contact-h1 {
+    font-size:clamp(32px,5vw,64px); font-weight:800; line-height:1.0; margin-bottom:20px;
+    color:var(--white);
+  }
+  .contact-h1 span { color:var(--accent); }
+  .contact-desc {
+    font-family:var(--mono); font-size:13px; color:var(--muted);
+    max-width:540px; margin:0 auto 40px; line-height:1.9;
+  }
+  .cta-btn {
+    display:inline-flex; align-items:center; gap:12px;
+    background:var(--accent); color:#000;
+    font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    padding:18px 40px; border-radius:8px; text-decoration:none;
+    transition:all .2s; box-shadow:0 0 30px rgba(245,200,0,0.25);
+    border:none; cursor:pointer;
+  }
+  .cta-btn:hover { background:#fff200; box-shadow:0 0 50px rgba(245,200,0,0.5); transform:translateY(-2px); }
+  .cta-btn-ghost {
+    display:inline-flex; align-items:center; gap:10px;
+    background:transparent; color:var(--accent);
+    font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+    padding:14px 32px; border-radius:8px; text-decoration:none;
+    transition:all .2s; border:1px solid rgba(245,200,0,0.4);
+    cursor:pointer;
+  }
+  .cta-btn-ghost:hover { border-color:var(--accent); background:rgba(245,200,0,0.06); }
+  .contact-features {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px; max-width:900px; margin:0 auto 60px;
+  }
+  .contact-feat {
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:24px; text-align:center; transition:border-color .2s;
+  }
+  .contact-feat:hover { border-color:var(--accent); }
+  .contact-feat-icon { font-size:32px; margin-bottom:12px; }
+  .contact-feat-title { font-size:14px; font-weight:700; color:var(--white); margin-bottom:8px; }
+  .contact-feat-desc { font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.8; }
+  .contact-divider {
+    height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent);
+    max-width:600px; margin:0 auto 48px;
+  }
+  .contact-social {
+    display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:24px;
+  }
+  .pulse-ring {
+    display:inline-block; width:10px; height:10px; border-radius:50%;
+    background:var(--green); position:relative;
+    box-shadow:0 0 8px var(--green);
+  }
+  .pulse-ring::after {
+    content:''; position:absolute; inset:-4px; border-radius:50%;
+    border:2px solid var(--green); opacity:0;
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse { 0%{opacity:.8;transform:scale(1)} 100%{opacity:0;transform:scale(2.2)} }
+  /* ── CONTACT PAGE ── */
+  .contact-page {
+    position:relative; min-height:80vh;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; border-radius:16px;
+    background:#000;
+    border:1px solid #252525;
+    padding:60px 24px;
+  }
+  .contact-noise {
+    position:absolute; inset:0; border-radius:16px; pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(245,197,24,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(255,32,32,0.08) 0%, transparent 60%);
+  }
+  .contact-inner {
+    position:relative; z-index:1; max-width:680px; text-align:center;
+  }
+  .contact-eyebrow {
+    font-family:var(--mono); font-size:10px; color:#f5c518;
+    letter-spacing:4px; text-transform:uppercase; margin-bottom:18px;
+    opacity:.8;
+  }
+  h2.contact-headline {
+    font-size:clamp(38px,6vw,72px); font-weight:800; line-height:1.05;
+    color:#f2f2f2; margin-bottom:20px;
+  }
+  .contact-highlight {
+    background:linear-gradient(90deg,#f5c518,#ff2020);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .contact-sub {
+    font-family:var(--mono); font-size:12px; color:#666; line-height:1.9;
+    max-width:540px; margin:0 auto 36px;
+  }
+  .contact-stats {
+    display:flex; align-items:center; justify-content:center; gap:0;
+    margin-bottom:40px; padding:20px 0;
+    border-top:1px solid #252525; border-bottom:1px solid #252525;
+  }
+  .cstat { text-align:center; padding:0 28px; }
+  .cstat-val { font-size:28px; font-weight:800; color:#f5c518; margin-bottom:4px; }
+  .cstat-lbl { font-family:var(--mono); font-size:9px; color:#555; letter-spacing:2px; text-transform:uppercase; }
+  .cstat-div { width:1px; height:40px; background:#252525; flex-shrink:0; }
+  .contact-cards {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:40px;
+  }
+  @media(max-width:600px){ .contact-cards{ grid-template-columns:1fr; } .contact-stats{ flex-wrap:wrap; gap:20px; } .cstat-div{ display:none; } }
+  .contact-card {
+    background:#0e0e0e; border:1px solid #252525; border-radius:12px;
+    padding:20px 16px; text-align:left; transition:border-color .2s, transform .2s;
+  }
+  .contact-card:hover { border-color:#f5c518; transform:translateY(-3px); }
+  .cc-icon { font-size:24px; margin-bottom:10px; }
+  .cc-title { font-size:13px; font-weight:700; color:#f2f2f2; margin-bottom:7px; }
+  .cc-body { font-family:var(--mono); font-size:10px; color:#555; line-height:1.8; }
+  .cta-btn {
+    display:inline-flex; align-items:center; gap:12px;
+    background:linear-gradient(90deg,#f5c518,#e0a800);
+    color:#000; font-family:var(--mono); font-size:13px; font-weight:700;
+    letter-spacing:1px; text-decoration:none; padding:16px 36px;
+    border-radius:10px; margin-bottom:16px;
+    transition:transform .2s, box-shadow .2s;
+    box-shadow:0 0 30px rgba(245,197,24,0.3);
+  }
+  .cta-btn:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(245,197,24,0.5); }
+  .cta-icon { font-size:18px; }
+  .cta-arrow { font-size:18px; transition:transform .2s; }
+  .cta-btn:hover .cta-arrow { transform:translateX(4px); }
+  .contact-note {
+    font-family:var(--mono); font-size:10px; color:#444; letter-spacing:2px;
+    text-transform:uppercase;
+  }
+
+</style>
+</head>
+<body>
+  <!-- EMAIL BANNER -->
+  <div style="background:rgba(245,200,0,0.08);border-bottom:1px solid rgba(245,200,0,0.2);padding:10px 24px;text-align:center;font-family:'Space Mono',monospace;font-size:11px;color:#aaa;letter-spacing:0.5px;position:relative;z-index:10;">
+    For any information, contact us at:&nbsp;
+    <a href="mailto:advisor@algocapitaldao.com" style="color:#f5c518;font-weight:700;text-decoration:none;letter-spacing:1px;border-bottom:1px solid rgba(245,200,0,0.4);padding-bottom:1px;">advisor@algocapitaldao.com</a>
+  </div>
+
+<div class="wrapper">
+
+  <!-- BRAND -->
+  <div class="brand-bar">
+    <div class="brand-logo">
+      <div>
+        <div class="brand-name">Algo Capital</div>
+        <div class="brand-tagline">Quantitative Research Division</div>
+      </div>
+    </div>
+    <div class="brand-badge">Crisis Alpha v2.0</div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-tag">▸ Event-Driven Strategy Research</div>
+    <h1>Middle East Crisis<br>Alpha Trigger Strategy</h1>
+    <div class="header-sub">Dataset: 8 crises (1967–2025) · 4 asset classes · 24 observations · Algo Capital Proprietary Research</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview',this)">Overview</button>
+    <button class="tab" onclick="showTab('signals',this)">Signals & Triggers</button>
+    <button class="tab" onclick="showTab('payoff',this)">Payoff & Returns</button>
+    <button class="tab" onclick="showTab('risk',this)">Risk Metrics</button>
+    <button class="tab" onclick="showTab('calculator',this)">Calculator</button>
+    <button class="tab" onclick="showTab('scenarios',this)">Scenarios</button>
+    <button class="tab contact-tab" onclick="showTab('contact',this)">Contact Us</button>
+  </div>
+
+  <!-- ═══════════════ OVERVIEW ═══════════════ -->
+  <div id="overview" class="section active">
+    <div class="kpi-grid">
+      <div class="kpi" style="--kpi-color:#39ff14">
+        <div class="kpi-label">Best Win Rate</div>
+        <div class="kpi-value">100%</div>
+        <div class="kpi-sub">Oil LONG · all horizons</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#f5c518">
+        <div class="kpi-label">Best Sharpe Ratio</div>
+        <div class="kpi-value">1.41</div>
+        <div class="kpi-sub">Oil LONG · 12-month horizon</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#00d4ff">
+        <div class="kpi-label">Max Single Return</div>
+        <div class="kpi-value">+300%</div>
+        <div class="kpi-sub">Oil · Yom Kippur 1973</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#ff8c00">
+        <div class="kpi-label">Gold Win Rate</div>
+        <div class="kpi-value">88–100%</div>
+        <div class="kpi-sub">Reliable safe haven 1–12M</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#ff2020">
+        <div class="kpi-label">Max Drawdown</div>
+        <div class="kpi-value">−43.1%</div>
+        <div class="kpi-sub">S&P 500 SHORT · Yom Kippur '73</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#f5c518">
+        <div class="kpi-label">Gold Profit Factor</div>
+        <div class="kpi-value">15×</div>
+        <div class="kpi-sub">Gold LONG · 3-month horizon</div>
+      </div>
+    </div>
+
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="card-title">▸ Strategy Logic</div>
+        <div class="trigger-list">
+          <div class="trigger-item">
+            <div class="trigger-num">01</div>
+            <div class="trigger-text"><strong>Trigger:</strong> Outbreak of a military/political crisis in the Middle East involving major oil producers (Iran, Iraq, Saudi Arabia, Kuwait)</div>
+            <span class="trigger-signal" style="background:rgba(245,197,24,0.09);color:var(--accent);border:1px solid rgba(245,197,24,0.35)">ALERT</span>
+          </div>
+          <div class="trigger-item">
+            <div class="trigger-num">02</div>
+            <div class="trigger-text"><strong>Classification:</strong> Oil embargo involved? → Scenario A (high intensity). Military conflict without embargo? → Scenario B. Short-lived crisis? → Scenario C</div>
+            <span class="trigger-signal" style="background:rgba(245,197,24,0.09);color:var(--gold);border:1px solid rgba(240,180,41,0.25)">CLASSIFY</span>
+          </div>
+          <div class="trigger-item">
+            <div class="trigger-num">03</div>
+            <div class="trigger-text"><strong>Position:</strong> LONG Oil/Gold + SHORT S&P 500 (Scenario A) · LONG Oil+Gold only (Scenario B) · LONG Gold light (Scenario C)</div>
+            <span class="trigger-signal" style="background:rgba(57,255,20,0.09);color:var(--green);border:1px solid rgba(57,255,20,0.25)">EXECUTE</span>
+          </div>
+          <div class="trigger-item">
+            <div class="trigger-num">04</div>
+            <div class="trigger-text"><strong>Exit:</strong> Confirmed ceasefire → close SHORT equity. Hold LONG Oil/Gold 6–12 months to capture full momentum tail</div>
+            <span class="trigger-signal" style="background:rgba(255,32,32,0.09);color:var(--red);border:1px solid rgba(255,32,32,0.25)">EXIT</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <div class="card-title">▸ Performance Summary by Asset</div>
+        <table class="data-table">
+          <thead><tr><th>Asset</th><th>Direction</th><th>WR 1M</th><th>WR 12M</th><th>Avg Ret 12M</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Oil (Crude)</strong></td><td><span class="badge badge-long">LONG</span></td><td class="positive">100%</td><td class="positive">100%</td><td class="positive">+171.9%</td></tr>
+            <tr><td><strong>Gold</strong></td><td><span class="badge badge-long">LONG</span></td><td class="positive">88%</td><td class="positive">100%</td><td class="positive">+47.1%</td></tr>
+            <tr><td><strong>WTI</strong></td><td><span class="badge badge-long">LONG</span></td><td class="positive">75%</td><td class="neutral">67%</td><td class="positive">+22.7%</td></tr>
+            <tr><td><strong>S&P 500</strong></td><td><span class="badge badge-short">SHORT</span></td><td class="neutral">50%</td><td class="positive">86%</td><td class="positive">+14.0%</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.9">
+          ✦ SHORT S&P 500 only effective during embargo crises (100% WR at 12M)<br>
+          ✦ Oil & Gold: unconditional LONG at event trigger<br>
+          ✦ WTI: watch post-ceasefire reversal (Desert Storm: −18.6%)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SIGNALS ═══════════════ -->
+  <div id="signals" class="section">
+    <div class="full-card">
+      <div class="card-title">▸ Signal Matrix by Crisis Type</div>
+      <table class="matrix">
+        <thead><tr><th style="text-align:left">Event</th><th>Crisis Type</th><th>S&P 500</th><th>Gold</th><th>Oil/WTI</th><th>Optimal Signal</th></tr></thead>
+        <tbody id="signal-matrix"></tbody>
+      </table>
+    </div>
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="card-title">▸ Entry Rules (Triggers)</div>
+        <div style="font-family:var(--mono);font-size:10px;line-height:2;color:var(--white)">
+          <div style="margin-bottom:9px;padding:8px 11px;background:rgba(57,255,20,0.05);border-left:3px solid var(--green);border-radius:0 6px 6px 0">
+            <span style="color:var(--green);font-weight:700">LONG OIL / WTI</span><br>
+            → Any Middle East crisis within 48h of event<br>
+            → Historical: +19.1% avg at 1M, 100% win rate (4 events)
+          </div>
+          <div style="margin-bottom:9px;padding:8px 11px;background:rgba(57,255,20,0.05);border-left:3px solid var(--green);border-radius:0 6px 6px 0">
+            <span style="color:var(--green);font-weight:700">LONG GOLD</span><br>
+            → Any crisis, immediate entry at trigger<br>
+            → Historical: +6.3% avg at 1M, 88% WR, max DD −5.8%
+          </div>
+          <div style="margin-bottom:9px;padding:8px 11px;background:rgba(255,32,32,0.05);border-left:3px solid var(--red);border-radius:0 6px 6px 0">
+            <span style="color:var(--red);font-weight:700">SHORT S&P 500</span><br>
+            → Only if: oil embargo + OPEC supply restrictions confirmed<br>
+            → With embargo: 100% WR at 12M, avg −43% (Yom Kippur)
+          </div>
+          <div style="padding:8px 11px;background:rgba(245,197,24,0.05);border-left:3px solid var(--gold);border-radius:0 6px 6px 0">
+            <span style="color:var(--gold);font-weight:700">NEUTRAL S&P 500</span><br>
+            → No embargo: wait for dip, buy equity at T+4W<br>
+            → Historical without embargo: +18% avg at 12M
+          </div>
+        </div>
+      </div>
+      <div class="strategy-card">
+        <div class="card-title">▸ Exit Rules</div>
+        <div style="font-family:var(--mono);font-size:10px;line-height:2;color:var(--white)">
+          <div style="margin-bottom:9px;padding:8px 11px;background:rgba(245,197,24,0.05);border-left:3px solid var(--accent);border-radius:0 6px 6px 0">
+            <span style="color:var(--accent);font-weight:700">EXIT OIL — Scenario A (Embargo)</span><br>
+            → T+6M or upon signing of stable peace/ceasefire<br>
+            → Do not exit early: +88% avg at 6M vs +19% at 1M
+          </div>
+          <div style="margin-bottom:9px;padding:8px 11px;background:rgba(245,197,24,0.05);border-left:3px solid var(--accent);border-radius:0 6px 6px 0">
+            <span style="color:var(--accent);font-weight:700">EXIT OIL — Scenario B (No Embargo)</span><br>
+            → T+3M (Gulf War: WTI +45.6% at 3M, then reverts to +22.4%)<br>
+            → Desert Storm: mandatory exit within 1M (−18.6% after)
+          </div>
+          <div style="margin-bottom:9px;padding:8px 11px;background:rgba(57,255,20,0.05);border-left:3px solid var(--green);border-radius:0 6px 6px 0">
+            <span style="color:var(--green);font-weight:700">EXIT GOLD</span><br>
+            → Hold to T+12M (100% WR, avg +47.1%)<br>
+            → Stop loss: −8% (Desert Storm outlier only)
+          </div>
+          <div style="padding:8px 11px;background:rgba(255,32,32,0.05);border-left:3px solid var(--red);border-radius:0 6px 6px 0">
+            <span style="color:var(--red);font-weight:700">EXIT SHORT EQUITY</span><br>
+            → Close at confirmed ceasefire or T+6M<br>
+            → Cover early if equity rebounds past T+2M
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PAYOFF ═══════════════ -->
+  <div id="payoff" class="section">
+    <div class="full-card">
+      <div class="card-title">▸ Average Returns by Asset & Time Horizon</div>
+      <div id="bar-charts"></div>
+    </div>
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="card-title">▸ Expected Portfolio Payoff</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:11px">
+          Allocation: 40% Oil/WTI · 35% Gold · 25% Short Equity (Scenario A only)
+        </div>
+        <div class="payoff-grid" id="payoff-grid"></div>
+      </div>
+      <div class="strategy-card">
+        <div class="card-title">▸ Return by Individual Event</div>
+        <table class="data-table" id="event-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ RISK ═══════════════ -->
+  <div id="risk" class="section">
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="kpi" style="--kpi-color:#39ff14"><div class="kpi-label">Sharpe · Oil 12M</div><div class="kpi-value">1.41</div><div class="kpi-sub">Excellent (&gt;1.0)</div></div>
+      <div class="kpi" style="--kpi-color:#39ff14"><div class="kpi-label">Sharpe · Oil 1M</div><div class="kpi-value">1.37</div><div class="kpi-sub">Excellent (&gt;1.0)</div></div>
+      <div class="kpi" style="--kpi-color:#f5c518"><div class="kpi-label">Sharpe · Gold 12M</div><div class="kpi-value">0.91</div><div class="kpi-sub">Good (0.5–1.0)</div></div>
+      <div class="kpi" style="--kpi-color:#f5c518"><div class="kpi-label">Sharpe · Gold 1M</div><div class="kpi-value">0.80</div><div class="kpi-sub">Good (0.5–1.0)</div></div>
+      <div class="kpi" style="--kpi-color:#ff8c00"><div class="kpi-label">Sharpe · S&P 6M</div><div class="kpi-value">0.45</div><div class="kpi-sub">Moderate</div></div>
+      <div class="kpi" style="--kpi-color:#ff2020"><div class="kpi-label">Sharpe · WTI 1M</div><div class="kpi-value">0.39</div><div class="kpi-sub">Low (vol &gt;20%)</div></div>
+    </div>
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="card-title">▸ Full Risk Metrics Table</div>
+        <table class="data-table">
+          <thead><tr><th>Asset</th><th>Horizon</th><th>Win Rate</th><th>Sharpe</th><th>Max DD</th><th>Profit Factor</th></tr></thead>
+          <tbody id="risk-table"></tbody>
+        </table>
+      </div>
+      <div class="strategy-card">
+        <div class="card-title">▸ Win Rate Distribution (12M)</div>
+        <div id="winloss-chart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ CALCULATOR ═══════════════ -->
+  <div id="calculator" class="section">
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="card-title">▸ Cumulative Equity Curve — All Events</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:14px;line-height:1.7">
+          Simulates compounding capital across all 8 historical crises in chronological order.<br>
+          Portfolio: 40% Oil/WTI · 35% Gold · 25% Short Equity (scenario A) or LONG equity (scenario B/C).
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:5px;text-transform:uppercase">Initial Capital ($)</label>
+          <input id="capital" type="number" value="10000" class="calc-input" oninput="buildEquityCurve()">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:5px;text-transform:uppercase">Horizon per Event</label>
+          <select id="horizonSel" class="calc-input" onchange="buildEquityCurve()">
+            <option value="1M">+1 Month</option>
+            <option value="3M">+3 Months</option>
+            <option value="6M" selected>+6 Months</option>
+            <option value="12M">+12 Months</option>
+          </select>
+        </div>
+        <div id="calc-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+      </div>
+
+      <div class="strategy-card" style="display:flex;flex-direction:column">
+        <div class="card-title">▸ Portfolio Equity Curve — All 8 Crises</div>
+        <div class="chart-wrap" style="flex:1;min-height:260px">
+          <canvas id="equity-canvas"></canvas>
+        </div>
+        <div id="event-legend" style="margin-top:12px;font-family:var(--mono);font-size:9px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+    </div>
+
+    <div class="full-card">
+      <div class="card-title">▸ Detailed Event-by-Event Compounding Table</div>
+      <table class="data-table" id="compound-table"></table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SCENARIOS ═══════════════ -->
+  <div id="scenarios" class="section">
+    <div class="scenario-bar" id="scen-tabs">
+      <button class="scen-btn active" onclick="showScenario('A',this)">🔴 Scenario A — Oil Embargo</button>
+      <button class="scen-btn" onclick="showScenario('B',this)">🟡 Scenario B — Military Conflict</button>
+      <button class="scen-btn" onclick="showScenario('C',this)">🟢 Scenario C — Short Crisis</button>
+    </div>
+    <div id="scenario-content"></div>
+  </div>
+
+  <!-- CONTACT -->
+  <div id="contact" class="section">
+    <div class="contact-page">
+      <div class="contact-noise"></div>
+      <div class="contact-inner">
+        <div class="contact-eyebrow">▸ Algo Capital · Quantitative Research</div>
+        <h2 class="contact-headline">Let's Build<br><span class="contact-highlight">Your Edge.</span></h2>
+        <p class="contact-sub">You've seen the data. Crisis Alpha is a systematic, battle-tested framework built on 58 years of geopolitical events. If you want to deploy this strategy or explore a custom quant model for your portfolio — let's talk.</p>
+        <div class="contact-stats">
+          <div class="cstat"><div class="cstat-val">+300%</div><div class="cstat-lbl">Max Single Trade</div></div>
+          <div class="cstat-div"></div>
+          <div class="cstat"><div class="cstat-val">1.41</div><div class="cstat-lbl">Sharpe Ratio</div></div>
+          <div class="cstat-div"></div>
+          <div class="cstat"><div class="cstat-val">100%</div><div class="cstat-lbl">Oil Win Rate</div></div>
+          <div class="cstat-div"></div>
+          <div class="cstat"><div class="cstat-val">8</div><div class="cstat-lbl">Crises Backtested</div></div>
+        </div>
+        <div class="contact-cards">
+          <div class="contact-card">
+            <div class="cc-icon">📊</div>
+            <div class="cc-title">Strategy Consultation</div>
+            <div class="cc-body">Deep dive into the Crisis Alpha model. Customise allocation, risk parameters and entry/exit rules for your mandate.</div>
+          </div>
+          <div class="contact-card">
+            <div class="cc-icon">⚙️</div>
+            <div class="cc-title">Algo Development</div>
+            <div class="cc-body">We build fully automated trigger systems, backtesting engines and live execution pipelines tailored to your infrastructure.</div>
+          </div>
+          <div class="contact-card">
+            <div class="cc-icon">🎯</div>
+            <div class="cc-title">Portfolio Integration</div>
+            <div class="cc-body">Event-driven overlays for existing portfolios. Hedging strategies, tail-risk protection and geopolitical alpha capture.</div>
+          </div>
+        </div>
+        <a href="https://calendly.com/a-migliaccio/call" target="_blank" rel="noopener" class="cta-btn">
+          <span class="cta-icon">📅</span>
+          Book a Free Strategy Call
+          <span class="cta-arrow">→</span>
+        </a>
+        <div class="contact-note">30-minute call · No commitment · 100% confidential</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠ DISCLAIMER · This analysis is based on 8 historical events (limited sample). Past returns do not guarantee future results. Future crises may differ in intensity, duration, and market response. This strategy is for quantitative research purposes only and does not constitute financial advice. Investing in commodities and short positions involves significant risks including total loss of capital. © 2025 Algo Capital — Quantitative Research Division. All rights reserved.
+  </div>
+
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const events = [
+  { name:'Six-Day War (1967)',         year:1967, type:'B', embargo:false },
+  { name:'Yom Kippur (1973)',           year:1973, type:'A', embargo:true  },
+  { name:'Iranian Revolution (1979)',   year:1979, type:'A', embargo:true  },
+  { name:'Iran–Iraq War (1980)',        year:1980, type:'A', embargo:false },
+  { name:'Gulf War Kuwait (1990)',      year:1990, type:'B', embargo:false },
+  { name:'Desert Storm (1991)',         year:1991, type:'B', embargo:false },
+  { name:'Iraq Invasion (2003)',        year:2003, type:'B', embargo:false },
+  { name:'12-Day War (2025)',           year:2025, type:'C', embargo:false },
+];
+
+// Portfolio combined return per event per horizon
+// Allocation: 40% Oil/WTI, 35% Gold, 25% ±Equity
+const portfolioReturns = {
+  // Allocation: 40% Oil/WTI · 35% Gold · 25% Equity (SHORT if embargo, LONG if resolution/Scen B, else 0)
+  // SHORT SP profit = +abs(sp_return) when SP falls; LONG SP = +sp_return when SP rises
+  '1M':  [
+    2.34,   // Six-Day 1967:      LONG Oil+Gold, NEUTRAL SP
+    22.94,  // Yom Kippur 1973:   LONG Oil+Gold, SHORT SP (−14.3% → +3.6% contrib)
+    18.47,  // Iranian Rev 1979:  LONG Oil+Gold, SHORT SP (−7.2%  → +1.8% contrib)
+    6.55,   // Iran-Iraq 1980:    LONG Oil+Gold, NEUTRAL SP (no embargo)
+    13.84,  // Gulf War 1990:     LONG WTI+Gold, NEUTRAL SP
+    -8.30,  // Desert Storm 1991: SHORT Oil/WTI+Gold, LONG SP
+    10.38,  // Iraq 2003:         LONG Oil+Gold+SP
+    3.51,   // 12-Day War 2025:   LONG Oil+Gold, NEUTRAL SP
+  ],
+  '3M':  [
+    4.68,   // Six-Day 1967
+    59.43,  // Yom Kippur 1973
+    43.93,  // Iranian Rev 1979
+    14.13,  // Iran-Iraq 1980
+    20.41,  // Gulf War 1990
+    -9.66,  // Desert Storm 1991
+    21.16,  // Iraq 2003
+    0.60,   // 12-Day War 2025
+  ],
+  '6M':  [
+    7.70,   // Six-Day 1967
+    109.02, // Yom Kippur 1973
+    76.32,  // Iranian Rev 1979
+    20.93,  // Iran-Iraq 1980
+    12.39,  // Gulf War 1990
+    -1.56,  // Desert Storm 1991
+    30.94,  // Iraq 2003
+    2.09,   // 12-Day War 2025
+  ],
+  '12M': [
+    7.76,   // Six-Day 1967 (no oil 12M data)
+    171.13, // Yom Kippur 1973
+    107.80, // Iranian Rev 1979
+    29.16,  // Iran-Iraq 1980
+    8.40,   // Gulf War 1990
+    12.13,  // Desert Storm 1991
+    48.28,  // Iraq 2003
+    null,   // 12-Day War 2025 (data pending)
+  ],
+};
+
+const stats = {
+  'Oil': {
+    '1M':  {wr:100,avg:19.15,med:19.05,std:13.94,dd:3.4,  pf:999, sharpe:1.37},
+    '3M':  {wr:100,avg:50.4, med:48.1, std:40.87,dd:6.8,  pf:999, sharpe:1.23},
+    '6M':  {wr:100,avg:88.0, med:76.8, std:78.55,dd:11.2, pf:999, sharpe:1.12},
+    '12M': {wr:100,avg:171.9,med:158.9,std:122.1,dd:56.8, pf:999, sharpe:1.41},
+  },
+  'Gold': {
+    '1M':  {wr:88, avg:6.29, med:4.05, std:7.84, dd:-5.8, pf:9.67, sharpe:0.80},
+    '3M':  {wr:88, avg:14.35,med:7.05, std:18.47,dd:-8.1, pf:15.17,sharpe:0.78},
+    '6M':  {wr:88, avg:27.2, med:11.2, std:34.5, dd:-4.3, pf:51.6, sharpe:0.79},
+    '12M': {wr:100,avg:47.11,med:18.4, std:51.56,dd:2.7,  pf:999,  sharpe:0.91},
+  },
+  'WTI':  {
+    '1M':  {wr:75, avg:8.03, med:9.75, std:20.53,dd:-18.6,pf:2.73, sharpe:0.39},
+    '3M':  {wr:50, avg:12.1, med:14.05,std:31.4, dd:-25.3,pf:2.87, sharpe:0.39},
+    '6M':  {wr:75, avg:13.35,med:12.1, std:23.87,dd:-12.7,pf:5.20, sharpe:0.56},
+    '12M': {wr:67, avg:22.67,med:8.9,  std:39.68,dd:-8.3, pf:9.19, sharpe:0.57},
+  },
+  'S&P 500': {
+    '1M':  {wr:50, avg:-1.1, med:0.45, std:7.67, dd:-14.3,pf:0.70, sharpe:-0.14},
+    '3M':  {wr:62, avg:1.74, med:4.45, std:12.95,dd:-25.8,pf:1.44, sharpe:0.13},
+    '6M':  {wr:88, avg:8.3,  med:13.55,std:18.34,dd:-35.2,pf:2.89, sharpe:0.45},
+    '12M': {wr:86, avg:14.01,med:22.1, std:26.14,dd:-43.1,pf:3.28, sharpe:0.54},
+  },
+};
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  if(id === 'calculator') setTimeout(buildEquityCurve, 60);
+}
+
+// ── SIGNAL MATRIX ─────────────────────────────────────────────────────────────
+function buildSignalMatrix() {
+  const tbody = document.getElementById('signal-matrix');
+  const signals = [
+    {ev:'Six-Day War (1967)',         type:'B · Military',         sp:'NEUTRAL',  gold:'LONG',  oil:'LONG',   opt:'LONG Oil + Gold'},
+    {ev:'Yom Kippur (1973)',           type:'A · OPEC Embargo',     sp:'SHORT',    gold:'LONG',  oil:'LONG',   opt:'SHORT SP + LONG Oil + Gold'},
+    {ev:'Iranian Revolution (1979)',   type:'A · Embargo',          sp:'SHORT',    gold:'LONG',  oil:'LONG',   opt:'SHORT SP + LONG Oil + Gold'},
+    {ev:'Iran–Iraq War (1980)',        type:'A · Military',         sp:'NEUTRAL',  gold:'LONG',  oil:'LONG',   opt:'LONG Oil + Gold'},
+    {ev:'Gulf War Kuwait (1990)',      type:'B · Invasion',         sp:'NEUTRAL',  gold:'LONG',  oil:'LONG',   opt:'LONG WTI (exit T+3M)'},
+    {ev:'Desert Storm (1991)',         type:'B · Resolution',       sp:'LONG',     gold:'SHORT', oil:'SHORT',  opt:'LONG SP, EXIT WTI immediately'},
+    {ev:'Iraq Invasion (2003)',        type:'B · Military',         sp:'LONG',     gold:'LONG',  oil:'LONG',   opt:'LONG everything'},
+    {ev:'12-Day War (2025)',           type:'C · Short-lived',      sp:'NEUTRAL',  gold:'LONG',  oil:'LONG',   opt:'LONG Gold + WTI (light)'},
+  ];
+  tbody.innerHTML = signals.map(s => {
+    const spC = s.sp==='SHORT'?'cell-red':s.sp==='LONG'?'cell-green':'cell-gold';
+    const gC  = s.gold==='SHORT'?'cell-red':'cell-green';
+    const oC  = s.oil==='SHORT'?'cell-red':'cell-green';
+    return `<tr>
+      <td><strong>${s.ev}</strong></td>
+      <td><span class="badge badge-neutral">${s.type}</span></td>
+      <td><span class="${spC}" style="display:inline-block;padding:2px 7px;border-radius:4px">${s.sp}</span></td>
+      <td><span class="${gC}"  style="display:inline-block;padding:2px 7px;border-radius:4px">${s.gold}</span></td>
+      <td><span class="${oC}"  style="display:inline-block;padding:2px 7px;border-radius:4px">${s.oil}</span></td>
+      <td style="color:var(--accent);font-size:10px">${s.opt}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── BAR CHARTS ────────────────────────────────────────────────────────────────
+function buildBarCharts() {
+  const cont = document.getElementById('bar-charts');
+  const assets = ['Oil','Gold','WTI','S&P 500'];
+  const cols   = {Oil:'#f5c518',Gold:'#f5c518',WTI:'#00d4ff','S&P 500':'#a78bfa'};
+  const horizons = ['1M','3M','6M','12M'];
+  cont.innerHTML = assets.map((a,ai) =>
+    `<div style="margin-bottom:${ai<assets.length-1?'20px':'0'}">
+      <div style="font-family:var(--mono);font-size:10px;color:${cols[a]};font-weight:700;margin-bottom:7px;letter-spacing:2px">${a.toUpperCase()}</div>
+      <div class="bar-chart">${horizons.map(h => {
+        const v = stats[a][h].avg; const max=172;
+        const pct=Math.abs(v)/max*100; const pos=v>=0;
+        return `<div class="bar-row">
+          <div class="bar-label">${h}</div>
+          <div class="bar-track">
+            <div class="bar-fill ${pos?'':'neg'}" style="width:${pct}%;background:${pos?cols[a]:'#ff2020'}">
+              ${pct>9?(pos?'+':'')+v.toFixed(1)+'%':''}
+            </div>
+          </div>
+          <div class="bar-val ${pos?'positive':'negative'}">${pos?'+':''}${v.toFixed(1)}%</div>
+        </div>`;
+      }).join('')}</div>
+    </div>${ai<assets.length-1?'<div class="divider"></div>':''}`
+  ).join('');
+}
+
+// ── PAYOFF GRID ───────────────────────────────────────────────────────────────
+function buildPayoffGrid() {
+  const grid = document.getElementById('payoff-grid');
+  const sA = {'1M':13.4,'3M':31.6,'6M':53.5,'12M':96.0};
+  const sB = {'1M':7.2, '3M':13.2,'6M':20.4,'12M':34.9};
+  const headers=['','1 Month','3 Months','6 Months','12 Months'];
+  const rows=[['Scenario A (Embargo)',sA],['Scenario B (Conflict)',sB]];
+  grid.innerHTML = headers.map(h=>`<div class="payoff-cell payoff-header">${h}</div>`).join('')+
+    rows.map(([lbl,s])=>`<div class="payoff-cell payoff-header" style="color:var(--white);text-align:left;font-size:9px">${lbl}</div>`+
+      ['1M','3M','6M','12M'].map(h=>{const v=s[h];const c=v>50?'#39ff14':v>20?'#f5c518':'#00d4ff';
+        return `<div class="payoff-cell" style="background:rgba(57,255,20,0.09);color:${c}">+${v.toFixed(1)}%</div>`;}).join('')
+    ).join('');
+}
+
+// ── EVENT TABLE ───────────────────────────────────────────────────────────────
+function buildEventTable() {
+  const tbl=document.getElementById('event-table');
+  const rows=[
+    {ev:'Six-Day War (1967)',       oil:3.4,  gold:2.8,  sp:-1.2, combo:'+2.3%'},
+    {ev:'Yom Kippur (1973)',         oil:35.1, gold:15.2, sp:-14.3,combo:'+22.9%'},
+    {ev:'Iranian Rev. (1979)',       oil:25.4, gold:18.6, sp:-7.2, combo:'+18.5%'},
+    {ev:'Iran–Iraq (1980)',          oil:12.7, gold:4.2,  sp:5.1,  combo:'+6.6%'},
+    {ev:'Gulf War (1990)',           oil:31.2, gold:3.9,  sp:-6.4, combo:'+13.8%'},
+    {ev:'Desert Storm (1991)',       oil:-18.6,gold:-5.8, sp:4.7,  combo:'-8.3%'},
+    {ev:'Iraq 2003',                 oil:12.3, gold:9.6,  sp:8.4,  combo:'+10.4%'},
+    {ev:'12-Day War (2025)',         oil:7.2,  gold:1.8,  sp:2.1,  combo:'+3.5%'},
+  ];
+  tbl.innerHTML=`<thead><tr><th>Event</th><th>Oil/WTI</th><th>Gold</th><th>S&P 500</th><th>Portfolio 1M</th></tr></thead><tbody>`+
+    rows.map((r,i)=>{
+      const bg=i%2===0?'':'background:rgba(255,255,255,0.015)';
+      return `<tr style="${bg}">
+        <td style="font-size:10px">${r.ev}</td>
+        <td class="${r.oil>=0?'positive':'negative'}">${r.oil>=0?'+':''}${r.oil}%</td>
+        <td class="${r.gold>=0?'positive':'negative'}">${r.gold>=0?'+':''}${r.gold}%</td>
+        <td class="${r.sp>=0?'positive':'negative'}">${r.sp>=0?'+':''}${r.sp}%</td>
+        <td class="${r.combo.startsWith('-')?'negative':'positive'}" style="font-weight:700">${r.combo}</td>
+      </tr>`;
+    }).join('')+'</tbody>';
+}
+
+// ── RISK TABLE ────────────────────────────────────────────────────────────────
+function buildRiskTable() {
+  const tbody=document.getElementById('risk-table');
+  const items=[
+    ['Oil','1M'],['Oil','12M'],
+    ['Gold','1M'],['Gold','12M'],
+    ['WTI','6M'],['WTI','12M'],
+    ['S&P 500','6M'],['S&P 500','12M'],
+  ];
+  tbody.innerHTML=items.map(([a,h])=>{
+    const s=stats[a][h];
+    const wC=s.wr>=80?'positive':s.wr>=60?'neutral':'negative';
+    const sC=s.sharpe>=1?'positive':s.sharpe>=0.5?'neutral':'negative';
+    const dC=s.dd>0?'positive':s.dd>-15?'neutral':'negative';
+    return `<tr>
+      <td><strong>${a}</strong></td><td style="color:var(--muted)">${h}</td>
+      <td class="${wC}">${s.wr}%</td>
+      <td class="${sC}">${s.sharpe.toFixed(2)}</td>
+      <td class="${dC}">${s.dd>0?'+':''}${s.dd}%</td>
+      <td class="positive">${s.pf===999?'∞':s.pf.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── WIN/LOSS DONUT ────────────────────────────────────────────────────────────
+function buildWinLoss() {
+  const cont=document.getElementById('winloss-chart');
+  const assets=['Oil','Gold','WTI','S&P 500'];
+  const cols={Oil:'#f5c518',Gold:'#f5c518',WTI:'#00d4ff','S&P 500':'#a78bfa'};
+  cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">`+
+    assets.map(a=>{
+      const s=stats[a]['12M']; const wr=s.wr; const lr=100-wr; const c=cols[a];
+      return `<div style="text-align:center">
+        <div style="font-family:var(--mono);font-size:9px;color:${c};font-weight:700;margin-bottom:9px;letter-spacing:2px">${a}</div>
+        <div style="position:relative;width:90px;height:90px;margin:0 auto 9px">
+          <svg viewBox="0 0 36 36" style="transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3.8"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="${c}" stroke-width="3.8" stroke-dasharray="${wr} ${100-wr}"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,68,68,0.4)" stroke-width="3.8" stroke-dasharray="${lr} ${100-lr}" stroke-dashoffset="${-wr}"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
+            <div style="font-size:16px;font-weight:800;color:${c}">${wr}%</div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted)">WR</div>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Sharpe <span style="color:${c}">${s.sharpe.toFixed(2)}</span></div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">DD <span style="color:${s.dd>0?'var(--green)':'var(--red)'}">${s.dd>0?'+':''}${s.dd}%</span></div>
+      </div>`;
+    }).join('')+'</div>';
+}
+
+// ── EQUITY CURVE ──────────────────────────────────────────────────────────────
+function buildEquityCurve() {
+  const capital = parseFloat(document.getElementById('capital').value) || 10000;
+  const horizon = document.getElementById('horizonSel').value;
+  const rets     = portfolioReturns[horizon];
+
+  // Build equity series: starting value, then after each event
+  const equity = [capital];
+  const labels  = ['Start'];
+  let   current  = capital;
+  let   maxVal   = capital;
+  let   maxDD    = 0;
+  let   peak     = capital;
+  let   wins     = 0;
+  const evReturns = [];
+
+  events.forEach((ev, i) => {
+    const r = rets[i];
+    if(r === null || r === undefined) return;
+    const prev = current;
+    current = current * (1 + r/100);
+    equity.push(current);
+    labels.push(ev.year.toString());
+    evReturns.push({ev:ev.name, year:ev.year, ret:r, val:current, prev});
+    if(r > 0) wins++;
+    if(current > peak) peak = current;
+    const dd = (current - peak) / peak * 100;
+    if(dd < maxDD) maxDD = dd;
+    if(current > maxVal) maxVal = current;
+  });
+
+  const totalRet = ((current - capital) / capital * 100).toFixed(1);
+  const wr = Math.round(wins / evReturns.length * 100);
+
+  // KPIs
+  document.getElementById('calc-kpis').innerHTML = [
+    {label:'Final Value',  val:`$${current.toLocaleString('en-US',{maximumFractionDigits:0})}`, c:'#39ff14'},
+    {label:'Total Return', val:(totalRet>0?'+':'')+totalRet+'%', c:totalRet>0?'#39ff14':'#ff2020'},
+    {label:'Win Rate',     val:wr+'%',  c:'#f5c518'},
+    {label:'Peak Value',   val:`$${maxVal.toLocaleString('en-US',{maximumFractionDigits:0})}`, c:'#00d4ff'},
+    {label:'Max Drawdown', val:maxDD.toFixed(1)+'%', c:'#ff2020'},
+    {label:'Events Traded',val:evReturns.length, c:'#a78bfa'},
+  ].map(k=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 7px;text-align:center">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">${k.label}</div>
+    <div style="font-size:14px;font-weight:800;color:${k.c}">${k.val}</div>
+  </div>`).join('');
+
+  // Canvas chart
+  const canvas = document.getElementById('equity-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width || 500;
+  const H = 240;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = {t:20,r:20,b:36,l:72};
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+
+  const minE = Math.min(...equity) * 0.95;
+  const maxE = Math.max(...equity) * 1.05;
+
+  function toX(i) { return pad.l + (i / (equity.length-1)) * cw; }
+  function toY(v) { return pad.t + ch - (v - minE) / (maxE - minE) * ch; }
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(24,35,51,0.8)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++) {
+    const y = pad.t + (ch/4)*i;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    const v = maxE - (maxE-minE)*(i/4);
+    ctx.fillStyle='rgba(70,96,112,0.8)'; ctx.font=`${9*dpr/dpr}px Space Mono,monospace`; ctx.textAlign='right';
+    ctx.fillText('$'+Math.round(v).toLocaleString('en-US'),pad.l-5,y+3);
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(245,197,24,0.2)');
+  grad.addColorStop(1,'rgba(245,197,24,0.01)');
+  ctx.beginPath();
+  equity.forEach((v,i) => i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+  ctx.lineTo(toX(equity.length-1), H-pad.b);
+  ctx.lineTo(toX(0), H-pad.b);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  equity.forEach((v,i) => i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+  ctx.strokeStyle='#f5c518'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.stroke();
+
+  // Event dots + labels
+  equity.forEach((v,i) => {
+    const x = toX(i); const y = toY(v);
+    const ev  = evReturns[i-1];
+    const pos = !ev || ev.ret >= 0;
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle   = i===0 ? '#f5c518' : pos ? '#39ff14' : '#ff2020';
+    ctx.strokeStyle = 'var(--bg)'; ctx.lineWidth = 1.5;
+    ctx.fill(); ctx.stroke();
+
+    if(i>0) {
+      ctx.save();
+      ctx.translate(x, H-pad.b+12);
+      ctx.rotate(-Math.PI/4);
+      ctx.fillStyle='rgba(70,96,112,0.9)';
+      ctx.font=`${8*dpr/dpr}px Space Mono,monospace`;
+      ctx.textAlign='right';
+      ctx.fillText(labels[i],0,0);
+      ctx.restore();
+    }
+  });
+
+  // Baseline label
+  ctx.fillStyle='rgba(70,96,112,0.9)'; ctx.font=`9px Space Mono,monospace`; ctx.textAlign='center';
+  ctx.fillText('Start', toX(0), H-pad.b+14);
+
+  // Legend
+  document.getElementById('event-legend').innerHTML = evReturns.map((e,i)=>{
+    const c = e.ret>=0?'#39ff14':'#ff2020';
+    return `<span style="color:${c};white-space:nowrap">${e.year}: ${e.ret>=0?'+':''}${e.ret.toFixed(1)}%</span>`;
+  }).join('<span style="color:var(--border);margin:0 2px">·</span>');
+
+  // Compounding table
+  const tbl = document.getElementById('compound-table');
+  tbl.innerHTML = `<thead><tr><th>#</th><th>Event</th><th>Year</th><th>Portfolio Return</th><th>P&L</th><th>Equity</th><th>vs Start</th></tr></thead><tbody>`+
+    evReturns.map((e,i)=>{
+      const pnl = e.val - e.prev;
+      const vsStart = ((e.val - capital)/capital*100).toFixed(1);
+      const rc = e.ret>=0?'positive':'negative';
+      const bg = i%2===0?'':'background:rgba(255,255,255,0.015)';
+      return `<tr style="${bg}">
+        <td style="color:var(--muted)">${i+1}</td>
+        <td style="font-size:10px">${e.ev}</td>
+        <td style="color:var(--muted)">${e.year}</td>
+        <td class="${rc}">${e.ret>=0?'+':''}${e.ret.toFixed(1)}%</td>
+        <td class="${pnl>=0?'positive':'negative'}">${pnl>=0?'+':''}$${Math.abs(pnl).toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+        <td style="color:var(--accent);font-weight:700">$${e.val.toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+        <td class="${vsStart>0?'positive':'negative'}">${vsStart>0?'+':''}${vsStart}%</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+}
+
+// ── SCENARIOS ─────────────────────────────────────────────────────────────────
+const scenarioData = {
+  A: {
+    color:'#ff2020', icon:'🔴',
+    title:'Scenario A — Oil Embargo',
+    desc:'Crisis with OPEC embargo, supply blockade, energy shock. Historical examples: Yom Kippur 1973, Iranian Revolution 1979.',
+    playbook:[
+      {action:'LONG Oil/WTI',   size:'40%', timing:'T+0 (immediate)', exp:'+35% at 1M, +187% at 6M', risk:'Low · 100% WR'},
+      {action:'LONG Gold',      size:'35%', timing:'T+0 (immediate)', exp:'+16% at 1M, +89% at 6M',  risk:'Low · 88% WR'},
+      {action:'SHORT S&P 500',  size:'25%', timing:'T+0 (immediate)', exp:'+14% at 1M (from short)',  risk:'High · only with embargo'},
+      {action:'EXIT SHORT SP',  size:'—',   timing:'T+6M or ceasefire', exp:'Lock in profit',         risk:'Protect against rebound'},
+      {action:'EXIT OIL',       size:'—',   timing:'T+6–12M',          exp:'Maximize momentum',      risk:'Trailing stop −15%'},
+    ],
+    results:{wr:'100%',avgRet:'+96%',sharpe:'1.41',dd:'-14%',label:'at 12 months (combined portfolio)'}
+  },
+  B: {
+    color:'#f5c518', icon:'🟡',
+    title:'Scenario B — Military Conflict Without Embargo',
+    desc:'Conventional warfare without supply blockade. Examples: Iraq 2003, Gulf War 1990, Six-Day War 1967.',
+    playbook:[
+      {action:'LONG WTI/Oil',   size:'40%', timing:'T+0',       exp:'+12% at 1M, +28% at 3M',  risk:'Medium · exit T+3M'},
+      {action:'LONG Gold',      size:'40%', timing:'T+0',       exp:'+9.6% at 1M, +24% at 6M', risk:'Low · 88% WR'},
+      {action:'NEUTRAL S&P 500',size:'—',   timing:'Wait 1M dip', exp:'Buy dip after 4 weeks',  risk:'86% WR at 12M'},
+      {action:'LONG S&P 500',   size:'20%', timing:'T+4 weeks', exp:'+22% avg at 6M',           risk:'Only after stabilization'},
+      {action:'EXIT WTI',       size:'—',   timing:'T+3M MANDATORY', exp:'Desert Storm: −18.6% at T+1M', risk:'Post-resolution trap'},
+    ],
+    results:{wr:'75–88%',avgRet:'+35%',sharpe:'0.78',dd:'-18.6%',label:'at 6 months (combined portfolio)'}
+  },
+  C: {
+    color:'#39ff14', icon:'🟢',
+    title:'Scenario C — Short-lived Crisis / Rapid Ceasefire',
+    desc:'Conflicts lasting under 30 days with quick resolution. Example: 12-Day War 2025 (Iran-Israel).',
+    playbook:[
+      {action:'LONG Gold',      size:'60%', timing:'T+0',           exp:'+1.8% at 1M',            risk:'Very low · pure hedge'},
+      {action:'LONG WTI',       size:'30%', timing:'T+0',           exp:'+7.2% at 1M',             risk:'Low · quick exit'},
+      {action:'NEUTRAL S&P 500',size:'—',   timing:'—',             exp:'No significant impact',   risk:'None'},
+      {action:'EXIT ALL',       size:'—',   timing:'T+4–8 weeks',   exp:'Take profit immediately', risk:'Momentum fades quickly'},
+    ],
+    results:{wr:'75%',avgRet:'+4.5%',sharpe:'0.60',dd:'-3%',label:'at 1 month (contained crisis)'}
+  }
+};
+
+function showScenario(key, btn) {
+  document.querySelectorAll('.scen-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const s = scenarioData[key];
+  document.getElementById('scenario-content').innerHTML = `
+    <div class="full-card" style="border-color:${s.color}25">
+      <div style="display:flex;align-items:flex-start;gap:18px;margin-bottom:18px">
+        <div style="font-size:36px">${s.icon}</div>
+        <div>
+          <div style="font-size:18px;font-weight:800;color:${s.color};margin-bottom:5px">${s.title}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8">${s.desc}</div>
+        </div>
+      </div>
+      <div class="card-title">▸ Operational Playbook</div>
+      <table class="data-table">
+        <thead><tr><th>Action</th><th>Size</th><th>Timing</th><th>Expected Return</th><th>Risk Notes</th></tr></thead>
+        <tbody>${s.playbook.map(p=>`<tr>
+          <td><strong style="color:${p.action.startsWith('LONG')?'var(--green)':p.action.startsWith('SHORT')?'var(--red)':'var(--muted)'}">${p.action}</strong></td>
+          <td style="color:var(--accent)">${p.size}</td>
+          <td style="color:var(--muted);font-size:9px">${p.timing}</td>
+          <td class="positive">${p.exp}</td>
+          <td style="font-size:9px;color:var(--muted)">${p.risk}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div class="divider"></div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:0">
+        <div class="kpi" style="--kpi-color:${s.color}"><div class="kpi-label">Win Rate</div><div class="kpi-value">${s.results.wr}</div></div>
+        <div class="kpi" style="--kpi-color:var(--green)"><div class="kpi-label">Avg Return</div><div class="kpi-value">${s.results.avgRet}</div><div class="kpi-sub">${s.results.label}</div></div>
+        <div class="kpi" style="--kpi-color:var(--gold)"><div class="kpi-label">Sharpe Proxy</div><div class="kpi-value">${s.results.sharpe}</div></div>
+        <div class="kpi" style="--kpi-color:var(--red)"><div class="kpi-label">Max Drawdown</div><div class="kpi-value">${s.results.dd}</div></div>
+      </div>
+    </div>`;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+buildSignalMatrix();
+buildBarCharts();
+buildPayoffGrid();
+buildEventTable();
+buildRiskTable();
+buildWinLoss();
+showScenario('A', document.querySelector('.scen-btn'));
+</script>
+</body>
+</html>
